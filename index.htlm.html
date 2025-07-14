@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inscription Apple Support</title>
+  <style>
+    body { margin: 0; font-family: 'Arial', sans-serif; background: #f2f2f2; }
+    header { text-align: center; background: #000; color: white; padding: 15px 0; }
+    header img { width: 40px; vertical-align: middle; margin-right: 10px; }
+    .cover { height: 200px; background-color: #ddd; background-size: cover; background-position: center; position: relative; }
+    #bannerInput { position: absolute; bottom: 10px; left: 10px; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 5px; font-size: 12px; cursor: pointer; }
+    .profile-pic { width: 100px; height: 100px; border-radius: 50%; border: 4px solid white; margin: -60px auto 20px; display: block; object-fit: cover; }
+    .container { max-width: 400px; margin: 0 auto 30px; background: #fff; border-radius: 15px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+    h2 { text-align: center; margin-bottom: 20px; color: #333; }
+    input[type="text"], input[type="email"], input[type="password"], input[type="file"] {
+      width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 8px; font-size: 16px;
+    }
+    button { width: 100%; background: #000; color: #fff; padding: 12px; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+    .success { text-align: center; margin-top: 10px; font-weight: bold; }
+    footer { text-align: center; font-size: 14px; color: #666; padding: 20px; }
+    .disabled { background: #aaa; cursor: not-allowed; opacity: 0.6; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" alt="Logo Apple" />
+    Plateforme d’inscription Apple
+  </header>
+
+  <div class="cover" id="bannerPreview">
+    <input type="file" id="bannerInput" accept="image/*" title="Changer la bannière" />
+  </div>
+
+  <img src="https://i.imgur.com/8Km9tLL.png" alt="Photo de profil" class="profile-pic" id="profilePreview" />
+  <div class="container">
+    <h2>Inscription</h2>
+    <form id="signupForm">
+      <input type="text" name="nom" placeholder="Nom" required />
+      <input type="text" name="prenom" placeholder="Prénom" required />
+      <input type="email" name="email" placeholder="Email (@icloud.com uniquement)" required />
+      <input type="password" name="motdepasse" placeholder="Mot de passe (min 6 caractères)" required />
+      <input type="file" id="photoProfilInput" accept="image/*" title="Changer la photo de profil" />
+      <button type="submit">S'inscrire</button>
+    </form>
+
+    <button class="disabled" disabled>S’inscrire avec Apple (bientôt)</button>
+    <div class="success" id="successMessage"></div>
+  </div>
+
+  <footer>
+    Projet d’inscription Apple — développé avec Google Sheets et GitHub Pages
+  </footer>
+
+  <script>
+    const form = document.getElementById('signupForm');
+    const successMessage = document.getElementById('successMessage');
+    const photoInput = document.getElementById('photoProfilInput');
+    const profilePic = document.getElementById('profilePreview');
+    const bannerInput = document.getElementById('bannerInput');
+    const bannerDiv = document.getElementById('bannerPreview');
+
+    photoInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => profilePic.src = e.target.result;
+        reader.readAsDataURL(file);
+      }
+    });
+
+    bannerInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = e => bannerDiv.style.backgroundImage = `url('${e.target.result}')`;
+        reader.readAsDataURL(file);
+      }
+    });
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      const email = form.email.value;
+      const password = form.motdepasse.value;
+
+      if (!email.endsWith("@icloud.com")) {
+        successMessage.textContent = "Erreur : l'email doit être une adresse iCloud.";
+        successMessage.style.color = "red";
+        return;
+      }
+
+      if (password.length < 6) {
+        successMessage.textContent = "Erreur : le mot de passe doit contenir au moins 6 caractères.";
+        successMessage.style.color = "red";
+        return;
+      }
+
+      const encryptedPassword = btoa(password); // chiffrement simple (base64)
+
+      const data = {
+        nom: form.nom.value,
+        prenom: form.prenom.value,
+        email: email,
+        motdepasse: encryptedPassword
+      };
+
+      fetch("https://script.google.com/macros/s/AKfycbz_kaDzHYbZIcwYY1hBL83cvNJkhdt_wyghw6SvhMiP2I2wwFVFRhnGx04hoXKEiaef4Q/exec", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(data)
+      })
+      .then(response => response.text())
+      .then(text => {
+        try {
+          const res = JSON.parse(text);
+          if (res.status === "success") {
+            successMessage.textContent = "✅ Inscription réussie !";
+            successMessage.style.color = "green";
+            form.reset();
+          } else {
+            successMessage.textContent = "❌ Erreur : " + (res.message || "Inconnue");
+            successMessage.style.color = "red";
+          }
+        } catch {
+          successMessage.textContent = "❌ Erreur lors de la réponse du serveur.";
+          successMessage.style.color = "red";
+        }
+      })
+      .catch(() => {
+        successMessage.textContent = "❌ Erreur de connexion.";
+        successMessage.style.color = "red";
+      });
+    });
+  </script>
+</body>
+</html>
